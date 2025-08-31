@@ -1,20 +1,4 @@
-Saya akan mengirimkan sebuah script utuh.  Tolong lakukan hal berikut:
-
-1. Analisis seluruh isi script dan jelaskan secara singkat bagaimana alurnya.
-2. Tata ulang script agar lebih rapi (indentasi, struktur kode, konsistensi variabel/fungsi).
-3. Buat script menjadi lebih efisien (hapus duplikasi, optimalkan logika).
-4. Jika memungkinkan, buat script lebih kompleks (contohnya menambahkan error handling, opsi tambahan, atau perbaikan performa).
-5. Jangan gunakan placeholder seperti "..." atau "-- isi di sini".  Script harus dikembalikan secara penuh, utuh, menyeluruh, tanpa ada bagian yang tertinggal
-6. Tambahkan komentar penting pada bagian-bagian utama agar mudah dipahami.
-7. Hasil akhir wajib disajikan dengan format:
-   · Analisis
-   · Script Versi Rapi & Optimasi (utuh, tanpa ada yang hilang) 
- perhatikan script itu tidak bisa Ter hide padahal ada beberapa fitur yang mengharuskan script harus terhide jadi perbaiki ketika pengguna mengklik batal maka Script terhide dan jika pengguna mengklik di luar area menu maka script juga terhide menggunakan isVisibel (false) atau sejenisnya
-
-
- Script game guardian: local AntiLoad= function(code) local Num = 0 local TakeCode = function(Code) local num2 = Num + 1 Num = num2 return code[Num] end return TakeCode end local code = {" "," "," "} assert(load(AntiLoad(code)))() gg.setVisible(false)
-
--- ============================================= --KONFIGURASI UTAMA --============================================= local CONFIG= { MOD_NAME = "VELLIX MOD MENU", VERSION = "v1.5.2", AUTHOR = "VELLIX", EXPIRE_DATE = "2025/12/05", -- Format: YYYY/MM/DD WELCOME_DELAY = 2000, -- milliseconds, GAME_VERSION = "3.1.11 GLOBAL", SCRIPT_VERSION = "VIP v2.0", DEVELOPER = "VELLIX_AO", HOTKEY_EXIT = 24, -- Volume Up untuk exit HOTKEY_BACK = 25  -- Volume Down untuk back }
+local CONFIG = { MOD_NAME = "VELLIX MOD MENU", VERSION = "v1.5.2", AUTHOR = "VELLIX", EXPIRE_DATE = "2025/12/05", -- Format: YYYY/MM/DD WELCOME_DELAY = 2000, -- milliseconds, GAME_VERSION = "3.1.11 GLOBAL", SCRIPT_VERSION = "VIP v2.0", DEVELOPER = "VELLIX_AO", HOTKEY_EXIT = 24, -- Volume Up untuk exit HOTKEY_BACK = 25  -- Volume Down untuk back }
 
 local BYPASS_CONFIG = { VERSION = "3.2.1 GLOBAL", SCRIPT_NAME = "VELLIX_AO Bypass System" }
 
@@ -116,11 +100,7 @@ end
 
 function clearMemory() local success = pcall(function() gg.setVisible(false)
 
-end
-
--- ============================================= --PLACEHOLDER FUNCTIONS --=============================================
-
-function GAMEM() while true do local DMGAME = gg.multiChoice({ "🔙 REFRESH MENU 🔙", "⚔️ NK DUNGEON", "🚪 GATE 1", "🚪 GATE 2",  "🚪 GATE 3", "🚪 GATE 4", "🚪 GATE 5", "🚪 GATE 6", "🚪 GATE 7", "🚪 GATE 8", "🔄 RESET SKILL", "📖 DUNGEON INFO", "🏰 GUILD MISSION", "🔙 BACK TO MAIN 🔙" }, nil, "⏩⏩ DUNGEON MANAGER ⏪⏪\nVELLIX_AO Aurcus Online\n🇮🇩 Aurcus 3.1.11 GLOBAL🇮🇩")
+end function GAMEM() while true do local DMGAME = gg.multiChoice({ "🔙 REFRESH MENU 🔙", "⚔️ NK DUNGEON", "🚪 GATE 1", "🚪 GATE 2",  "🚪 GATE 3", "🚪 GATE 4", "🚪 GATE 5", "🚪 GATE 6", "🚪 GATE 7", "🚪 GATE 8", "🔄 RESET SKILL", "📖 DUNGEON INFO", "🏰 GUILD MISSION", "🔙 BACK TO MAIN 🔙" }, nil, "⏩⏩ DUNGEON MANAGER ⏪⏪\nVELLIX_AO Aurcus Online\n🇮🇩 Aurcus 3.1.11 GLOBAL🇮🇩")
 
 end
 
@@ -574,21 +554,15 @@ end
 
 function buffp() gg.clearResults() gg.setVisible(false) gg.setRanges(gg.REGION_JAVA_HEAP) gg.searchNumber("65536;1;211~212:13",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0) gg.processResume() gg.refineNumber("211",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
 
-revert = gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) local t= gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) for i,v in ipairs(t) do if v.flags == gg.TYPE_DWORD then v.value = "375" v.freeze = true end end gg.addListItems(t) t= nil gg.processResume() showToast("Buff Settings diaktifkan") end
-
--- ============================================= --SYSTEM FUNCTIONS --============================================= function exitScript() local confirm = gg.alert("⚠️ KONFIRMASI KELUAR ⚠️",  "Apakah Anda yakin ingin keluar?", "YA", "TIDAK")
+revert = gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) local t= gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) for i,v in ipairs(t) do if v.flags == gg.TYPE_DWORD then v.value = "375" v.freeze = true end end gg.addListItems(t) t= nil gg.processResume() showToast("Buff Settings diaktifkan") end function exitScript() local confirm = gg.alert("⚠️ KONFIRMASI KELUAR ⚠️",  "Apakah Anda yakin ingin keluar?", "YA", "TIDAK")
 
 end
 
 function getBypassStatus() local status = "🔍 Status Bypass:\n" status = status .. "• Anti-Login: " .. (bypassState.antiLoginActive and "AKTIF" or "NONAKTIF") .. "\n" status = status .. "• Stabilizer: " .. (bypassState.stabilizerActive and "AKTIF" or "NONAKTIF") .. "\n" status = status .. "• GG Detection: " .. (bypassState.ggDetectionDisabled and "MATI" or "HIDUP")
 
-end
+end local function main() -- Tampilkan welcome screen terlebih dahulu if not showWelcomeScreen() then return -- Keluar jika script expired end
 
--- ============================================= --MAIN EXECUTION --============================================= local function main() -- Tampilkan welcome screen terlebih dahulu if not showWelcomeScreen() then return -- Keluar jika script expired end
-
-end
-
--- Jalankan script utama dengan error handling gg.setVisible(false) gg.toast("🎮VELLIX_AO Script Loading...")
+HOME() end gg.setVisible(false) gg.toast("🎮VELLIX_AO Script Loading...")
 
 local success, err = pcall(main)
 
