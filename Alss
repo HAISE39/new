@@ -1,0 +1,595 @@
+Saya akan mengirimkan sebuah script utuh.  Tolong lakukan hal berikut:
+
+1. Analisis seluruh isi script dan jelaskan secara singkat bagaimana alurnya.
+2. Tata ulang script agar lebih rapi (indentasi, struktur kode, konsistensi variabel/fungsi).
+3. Buat script menjadi lebih efisien (hapus duplikasi, optimalkan logika).
+4. Jika memungkinkan, buat script lebih kompleks (contohnya menambahkan error handling, opsi tambahan, atau perbaikan performa).
+5. Jangan gunakan placeholder seperti "..." atau "-- isi di sini".  Script harus dikembalikan secara penuh, utuh, menyeluruh, tanpa ada bagian yang tertinggal
+6. Tambahkan komentar penting pada bagian-bagian utama agar mudah dipahami.
+7. Hasil akhir wajib disajikan dengan format:
+   · Analisis
+   · Script Versi Rapi & Optimasi (utuh, tanpa ada yang hilang) 
+ perhatikan script itu tidak bisa Ter hide padahal ada beberapa fitur yang mengharuskan script harus terhide jadi perbaiki ketika pengguna mengklik batal maka Script terhide dan jika pengguna mengklik di luar area menu maka script juga terhide menggunakan isVisibel (false) atau sejenisnya
+
+
+ Script game guardian: local AntiLoad= function(code) local Num = 0 local TakeCode = function(Code) local num2 = Num + 1 Num = num2 return code[Num] end return TakeCode end local code = {" "," "," "} assert(load(AntiLoad(code)))() gg.setVisible(false)
+
+-- ============================================= --KONFIGURASI UTAMA --============================================= local CONFIG= { MOD_NAME = "VELLIX MOD MENU", VERSION = "v1.5.2", AUTHOR = "VELLIX", EXPIRE_DATE = "2025/12/05", -- Format: YYYY/MM/DD WELCOME_DELAY = 2000, -- milliseconds, GAME_VERSION = "3.1.11 GLOBAL", SCRIPT_VERSION = "VIP v2.0", DEVELOPER = "VELLIX_AO", HOTKEY_EXIT = 24, -- Volume Up untuk exit HOTKEY_BACK = 25  -- Volume Down untuk back }
+
+local BYPASS_CONFIG = { VERSION = "3.2.1 GLOBAL", SCRIPT_NAME = "VELLIX_AO Bypass System" }
+
+-- State untuk tracking status bypass local bypassState= { antiLoginActive = false, stabilizerActive = false, ggDetectionDisabled = false }
+
+-- State management local appState= { isRunning = true, currentMenu = "HOME" }
+
+local DUNGEON_CONFIG = { TARGET_VALUE = 1008981770, REPLACE_VALUE = -1, REPLACE_VALUE_TP = -2, MEMORY_RANGE = gg.REGION_JAVA_HEAP }
+
+local dungeonState = { gatesUnlocked = {false, false, false, false, false, false, false, false}, nkActivated = false, skillReset = false }
+
+local TELEPORT_CONFIG = { SEARCH_PATTERN = "404;1~3;255:9", SEARCH_VALUE = 404, MEMORY_RANGE = gg.REGION_JAVA_HEAP, FREEZE_VALUES = true, DELAY_AFTER_TELEPORT = 2000 }
+
+local TELEPORT_LOCATIONS = { { id = 1, name = "EVEHOME", value = 1201, description = "Rumah karakter Eve" }, { id = 2, name = "DEV FAST DROPT", value = 39, description = "Area drop cepat developer" }, { id = 3, name = "DEV RESET SKILL", value = 1, description = "Area reset skill developer" }, { id = 4, name = "FARM BOSS EXP", value = 1146, description = "Area farm boss untuk EXP dan key" }, { id = 5, name = "SETTA", value = 1107, description = "Area karakter Setta" }, { id = 6, name = "NIGHT KINGDOM", value = 1166, description = "Kerajaan malam" }, { id = 7, name = "STARDUST", value = 1156, description = "Area stardust" }, { id = 8, name = "SUMMER BEACH", value = 286, description = "Pantai musim panas" } }
+
+-- State untuk tracking teleport local teleportState= { lastLocation = nil, teleportCount = 0 }
+
+local SKILL_CONFIG = { SEARCH_PATTERN = "25769803776Q;6;200;0;1.0F:105", TARGET_VALUE = 200, OFFSET = 48, MEMORY_RANGE = gg.REGION_JAVA_HEAP, FREEZE_SKILLS = true }
+
+local MALE_SKILLS = { { id = 1, name = "SKILL PASIR", value = 10078, description = "Sand skill untuk farming" }, { id = 2,  name = "SKILL BUFF LIGHT", value = 10084, description = "Light buff skill" }, { id = 3, name = "SKILL BUFF FIGHT",  value = 10085, description = "Fight buff skill" }, { id = 4, name = "SKILL WIGS", value = 10072, description = "Wigs skill" }, { id = 5, name = "BONUS SKILL", value = 11306, description = "Bonus skill khusus" } }
+
+local skillState = { activeSkills = {}, lastActivated = nil, totalActivations = 0 }
+
+local FEMALE_SKILLS = { { id = 1, name = "SKILL PASIR", value = 10077, description = "Sand skill untuk farming karakter female" }, { id = 2,  name = "SKILL BUFF LIGHT", value = 10083, description = "Light buff skill untuk karakter female" }, { id = 3, name = "SKILL BUFF FIGHT",  value = 10084, description = "Fight buff skill untuk karakter female" }, { id = 4, name = "SKILL WIGS", value = 10071, description = "Wigs skill untuk karakter female" }, { id = 5, name = "BONUS SKILL", value = 11305, description = "Bonus skill khusus untuk karakter female" } }
+
+local femaleSkillState = { activeSkills = {}, lastActivated = nil, totalActivations = 0 }
+
+local ROOT_CONFIG = { DELAY_BETWEEN_OPERATIONS = 200, MAX_RESULTS = 100 }
+
+local rootState = { isActive = false, lastActivationTime = nil, totalActivations = 0 }
+
+local STORAGE_CONFIG = { SEARCH_PATTERN = "-1;2;-1:9", REFINE_PATTERN = "-1;59;-1:9", TARGET_VALUE = 59, OFFSET = 4, MEMORY_RANGE = gg.REGION_JAVA_HEAP, DELAY_BEFORE_REFINE = 5000, -- 5 seconds DELAY_AFTER_ACTION = 2000   -- 2 seconds }
+
+local storageState = { lastAccessed = nil, accessCount = 0, lastAction = nil }
+
+local QUEST_CONFIG = { SEARCH_PATTERN = "964;2;1:9", TARGET_VALUE = 964, MEMORY_RANGE = gg.REGION_JAVA_HEAP, DELAY_AFTER_ACTION = 500 }
+
+local QUEST_ACTIONS = { { id = 1, name = "SKIP SETTA", value = 1143, description = "Skip quest untuk karakter Setta" }, { id = 2, name = "SKIP EVEHOME",  value = 1201, description = "Skip quest untuk Evehome" }, { id = 3, name = "AMBIL WATER SHOT", value = 1185, description = "Ambil item Water Shot dari quest" }, { id = 4, name = "AMBIL TONGKAT KAYU", value = 961, description = "Ambil item Tongkat Kayu dari quest" } }
+
+local COIN_CONFIG = { QUEST_PATTERN = "964;2;1:9", QUEST_TARGET = 964, QUEST_REPLACE = 1185, TELEPORT_PATTERN = "404;1~3;255:9", TELEPORT_TARGET = 404, MEMORY_RANGE = gg.REGION_JAVA_HEAP, DELAY_BETWEEN_STEPS = 100, MAX_RESULTS = 100 }
+
+local COIN_MISSIONS = { { id = 1, name = "CM【100c】> 1", value = 27 }, { id = 2, name = "CM【100c】> 2", value = 53 }, { id = 3, name = "CM【100c】> 3", value = 71 }, { id = 4, name = "CM【100c】> 4", value = 79 }, { id = 5, name = "CM【100c】> 5", value = 106 }, { id = 6, name = "CM【100c】> 6", value = 129 }, { id = 7, name = "CM【100c】> 7", value = 140 }, { id = 8, name = "CM【100c】> 8", value = 164 }, { id = 9, name = "CM【100c】> 9", value = 172 }, { id = 10, name = "CM【100c】> 10", value = 202 }, { id = 11, name = "CM【100c】> 11", value = 237 }, { id = 12, name = "CM【100c】> 12", value = 245 }, { id = 13, name = "CM【100c】> 13", value = 308 }, { id = 14, name = "CM【100c】> 14", value = 320 }, { id = 15, name = "CM【100c】> 15", value = 356 }, { id = 16, name = "CM【100c】> 16", value = 367 }, { id = 17, name = "CM【100c】> 17", value = 426 }, { id = 18, name = "CM【100c】> 18", value = 503 }, { id = 19, name = "CM【100c】> 19", value = 511 }, { id = 20, name = "CM【100c】> 20", value = 563 }, { id = 21, name = "CM【100c】> 21", value = 571 }, { id = 22, name = "CM【100c】> 22", value = 664 }, { id = 23, name = "CM【100c】> 23", value = 710 }, { id = 24, name = "CM【100c】> 24", value = 716 }, { id = 25, name = "CM【100c】> 25", value = 825 }, { id = 26, name = "CM【100c】> 26", value = 916 }, { id = 27, name = "CM【100c】> 27", value = 1132 } }
+
+-- ============================================= --FUNGSI UTILITAS --============================================= function showToast(message) gg.toast("[" .. CONFIG.SCRIPT_VERSION .. "] " .. message) end
+
+function showAlert(title, message) gg.alert("⚡ " .. title .. " ⚡\n" .. message) end
+
+function safeCall(func, ...) local success, result = pcall(func, ...) if not success then showAlert("ERROR", "Terjadi kesalahan: " .. tostring(result)) return false end return result end
+
+-- Fungsi untuk membuat border dekoratif local function createBorder(text,symbol) local length = string.len(text) local border = string.rep(symbol, length + 4) return border end
+
+-- Fungsi untuk cek expired date local function checkExpiration() local currentDate = os.date("%Y/%m/%d") if currentDate > CONFIG.EXPIRE_DATE then gg.alert("⚠️ SCRIPT EXPIRED ⚠️\n\nScript ini telah kedaluwarsa!\nSilakan hubungi developer untuk update.") return false end return true end
+
+-- Fungsi untuk mendapatkan status koneksi (simulasi) local function getConnectionStatus() -- Simulasi pengecekan koneksi local statuses = {"🟢 ONLINE", "🟡 UNSTABLE", "🔴 OFFLINE"} return statuses[math.random(1, 2)] -- Bias ke online/unstable end
+
+-- ============================================= --WELCOME SCREEN --============================================= local function showWelcomeScreen() -- Sembunyikan Game Guardian overlay gg.setVisible(false)
+
+╔═══════════════════════════════════════╗ ║⚡ %s ⚡            ║ ║%s                 ║ ╠═══════════════════════════════════════╣ ║║ ║📅 %s, %s %d, %04d              ║ ║🕐 %02d:%02d:%02d (%s)                    ║ ║🌐 Status: %s                ║ ║║ ║⏰ Script Valid: %d hari lagi        ║ ║🔧 Build: %s                        ║ ║║ ║💡 Tips: Jangan lupa update script   ║ ║secara berkala untuk fitur terbaru║ ║║ ╚═══════════════════════════════════════╝
+
+]],  CONFIG.MOD_NAME, CONFIG.VERSION, dayName, monthName, currentTime.day, currentTime.year, currentTime.hour, currentTime.min, currentTime.sec, currentTime.hour >= 12 and "PM" or "AM", connectionStatus, daysLeft > 0 and daysLeft or 0, CONFIG.VERSION )
+
+end
+
+-- ============================================= --STRUCTURE MENU --============================================= local MENU_STRUCTURE= { HOME = { title = "⏩⏩SCRIPT VIP VELLIX_AO⏪⏪\nVELLIX_AO Aurcus Online\n🇮🇩 Aurcus " .. CONFIG.GAME_VERSION .. "🇮🇩", items = { "⚡ BYPASS ⚡", "📁 UNTUK FARM", "📁 UNTUK DUNGEON",  "📁 TELEPORT", "📁 Skill Farm Cowok", "📁 Skill Farm Cewek", "📁 AUTO ROOT", "📖 SAVED ITEM", "📖 QUEST BONUS",  "📒 COIN MISSION", "🔚 EXIT 🔚" }, handlers = { [1] = function() safeCall(BYPASS0) end, [2] = function() safeCall(UFARM) end, [3] = function() safeCall(GAMEM) end, [4] = function() safeCall(TP) end, [5] = function() safeCall(GAMEEM) end, [6] = function() safeCall(GAMEZ) end, [7] = function() safeCall(crt) end, [8] = function() safeCall(bag) end, [9] = function() safeCall(qttp) end, [10] = function() safeCall(COIN) end, [11] = function() safeCall(exitScript) end } },
+
+}
+
+-- ============================================= --MAIN MENU FUNCTIONS --============================================= function HOME() gg.setVisible(false) appState.currentMenu = "HOME"
+
+end
+
+function UFARM() appState.currentMenu = "UFARM"
+
+end
+
+-- ============================================= --BYPASS FUNCTIONS --============================================= function BYPASS0() while true do local menudebug = gg.choice({ "1. 🛡️ Anti Force Close Saat Login", "2. 🗺️ Stabilizer Saat Pindah Map",  "3. 🧹 Clear Memory Manual", "4. 🔙 Kembali ke Menu Utama" }, nil, "⏩⏩SCRIPT VIP VELLIX_AO⏪⏪\n" .. BYPASS_CONFIG.SCRIPT_NAME .. "\n🇮🇩 Aurcus " .. BYPASS_CONFIG.VERSION .. "🇮🇩")
+
+end
+
+function antiLogin() local success = pcall(function() gg.setVisible(false) gg.clearResults()
+
+end
+
+function disableGGDetection() local success = pcall(function() gg.setVisible(false) gg.clearResults()
+
+end
+
+function advancedMapStabilizer() local success = pcall(function() gg.setVisible(false) gg.clearResults()
+
+end
+
+function hideGGSignature() local success = pcall(function() gg.setVisible(false)
+
+end
+
+function mapStabilizer() gg.setVisible(false)
+
+end
+
+function clearMemory() local success = pcall(function() gg.setVisible(false)
+
+end
+
+-- ============================================= --PLACEHOLDER FUNCTIONS --=============================================
+
+function GAMEM() while true do local DMGAME = gg.multiChoice({ "🔙 REFRESH MENU 🔙", "⚔️ NK DUNGEON", "🚪 GATE 1", "🚪 GATE 2",  "🚪 GATE 3", "🚪 GATE 4", "🚪 GATE 5", "🚪 GATE 6", "🚪 GATE 7", "🚪 GATE 8", "🔄 RESET SKILL", "📖 DUNGEON INFO", "🏰 GUILD MISSION", "🔙 BACK TO MAIN 🔙" }, nil, "⏩⏩ DUNGEON MANAGER ⏪⏪\nVELLIX_AO Aurcus Online\n🇮🇩 Aurcus 3.1.11 GLOBAL🇮🇩")
+
+end
+
+-- Optimized function untuk modifikasi memory function modifyMemory(pattern,replaceValue, valueType) local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(DUNGEON_CONFIG.MEMORY_RANGE)
+
+end
+
+function nk() local patterns = { "246;1008981770;1800;1175::50", "161;1008981770;1556;1176::50", "96;1008981770;3085;1174::50", "1081;1008981770;1285;1164::50", "95;1008981770;3081;1177::50", "257D;1008981770;2569D;1074D::50", "124;1008981770;2566;1178::50" }
+
+end
+
+function g1() modifyMemory("212;1;1069547520;1008981770;50331905:29", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 1 Unlocked") end
+
+function g2() modifyMemory("586;1;1065353216;1008981770;1080033280;16777473:29", DUNGEON_CONFIG.REPLACE_VALUE) modifyMemory("586;1;1066192077;1008981770;1082130432;33554689:29", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 2 Unlocked") end
+
+function g3() modifyMemory("699;1;1065353216;1008981770;1069547520;1082549862;1082549862;16777473:29", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 3 Unlocked") end
+
+function g4() modifyMemory("836;1008981770;1280;937:45", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 4 Unlocked") end
+
+function g5() modifyMemory("662D;1008981770;10280;949;662;1008981770;10280;950:125", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 5 Unlocked") end
+
+function g6() modifyMemory("257D;1008981770;2569D;1074D::50", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 6 Unlocked") end
+
+function g7() modifyMemory("1061;1008981770;2565;1154:45", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 7 Unlocked") end
+
+function g8() modifyMemory("865D;1008981770D;1554D;1181D:45", DUNGEON_CONFIG.REPLACE_VALUE) gg.toast("🚪 Gate 8 Unlocked") end
+
+function rs() modifyMemory("3;81;20:9", 25, gg.TYPE_DWORD) gg.toast("🔄 Skill Reset Activated") end
+
+function dg() gg.alert([[ DESKRIPSI SCRIPT DUNGEON
+
+Pergi ke Elmo di Galleria Capital dan pilih misi Minotaur.
+
+· Pilih mode normal dan cari angka 1
+· Lalu pilih mode hard dan murnikan menjadi 10 Jika selesai diedit,langsung masuk salon (tanpa freeze) NPC.
+
+Blacksmith:
+
+· Search 1 → pergi ke Unhappy Man → murnikan 78
+· 29 g1 shop
+· 50 sai 4*
+· 51 La release
+· 52 Festival fan
+· 53 Latent abi
+· 55 AoT = 1044
+· 58 Hello Kitty
+· 60-64,83 Legit furnis
+· 65 E.shadow
+· 66 Chocolate furni
+· 68 Fish expan
+· 70 Cursed weap
+· 71 Dispel 5
+· 72 Obsidian = 1327
+· 73 Halloween furni & ava
+· 74 Snowman
+· 76 Choco furnis
+· 84 Schoolgirl furni
+· 87 Starry sky wall furnis
+· 97 MW3 ava
+· 98 Halloween
+· 99 STR main, INT sub, Neck HP
+· 100 DEX head, CRI body, HP leg = 1171 bot best pick
+· 101 CRIDMG sub, MEN = 1387
+· 102 DEX main, DEF, MPR = 1407
+· 103 HP body, gold furnis = 1487
+· 104 Roar MDEF INT ear = 1492
+· 105 CRI head, MATK ring = 1497
+· 106 STR sub, VIT lower, DEF ring = 1578
+· 107 Snowman
+· 108 Snowalls, Veteran abi = 1586
+· 109 Sweet furnis
+· 110 Demist
+· 111 Blue JP furni
+
+DUNGEONS
+
+· 480 Ancient Tower
+· 570 Ebisu Kagura
+· 890 Alert Area
+· 930 Headway Fort Mime
+· 960 Hidden Cradle
+· 1050 Library of Insanity
+· 1109 Haya
+· 1236 Large Ring Tower
+· 1287 95 Regilis
+· 1299 Mitera
+· 752 Tasogarep
+· 430 Northern Cape
+· 1360 Matia Cosmos
+· 1410 Awakening Quest Dungeon
+· 1546 Trex
+· 1606 NK Hard
+· 1625 NK Expert
+
+GATES
+
+· 1316 G4
+· 1320 G5
+· 1420 G6
+· 1562 G7
+· 1650 G8
+
+JP DUNGEONS
+
+· 750 Silver World
+· 860 Nightmare World
+· 1044 Titan Expert 4*
+· 1136 Yellow Cloth Piece
+· 1142 Secret Hideout
+· 1159 Relier Hard
+· 1171 Relier Maze (Hyumo, Tiger Rock)
+· 1256 Hulk & Schoolgirl
+· 1258 Seagod Book / Green Crystal
+· 1265 EXP Taurus
+· 1268 Holy World, Holy Abi
+· 1270 Dark World
+· 1274 Foxgirl, JP Leafs
+· 1327 Dark Obsidian
+· 1328 Pumpkin Blue
+· 1330 Pumpkin Green
+· 1331 Pumpkin Orange
+· 1376 Blue/Red Crystal
+· 1387 Dragon Fossil
+· 1397 Souqs Mucus
+· 1407 Onyx
+· 1411 Discipline World, EXP mission
+· 1428 Schoolgirl / Hearts
+· 1487 Taurus
+· 1492 Maze of Famine
+· 1493 Fox, Silver Coin of Happiness
+· 1497 Tailwind, Crystal of Storm
+· 1502 Schoolgirl
+· 1567 Nightmare
+· 1573 Pumpkin
+· 1574 Large E.shadow Leaf
+· 1578 79 Latent
+· 1586 Proof of Victory ]])
+  gg.alert(dungeonInfo) end
+
+function TPP() while true do local MTPP = gg.multiChoice({ "🔙 REFRESH MENU 🔙", "🏞️ DEN OF NO RETURN", "❄️ FOREST MANA POOL",  "⚔️ PREA PDIP", "👹 OGRE", "🐦 AVES", "🔙 BACK TO DUNGEON 🔙" }, nil, "⏩⏩ GUILD MISSION TELEPORT ⏪⏪\nVELLIX_AO Aurcus Online")
+
+end
+
+function ggtp1() modifyMemory("159;1;1077936128;1008981770;33554689;1054:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) gg.toast("🏞️ Teleport: Den of No Return") end
+
+function ggtp2() modifyMemory("129;1;1077936128;1008981770;50331905;1550:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) modifyMemory("129;1;1077936128;1008981770;16777473;1550:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) modifyMemory("129;1;1082549862;1008981770;33554689;1550:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) gg.toast("🌳 Teleport: Forest Mana Pool") end
+
+function ggtp3() modifyMemory("717;1;1080033280;1008981770;1061997773;1069547520;1073741824;33620225:29", DUNGEON_CONFIG.REPLACE_VALUE_TP) gg.toast("⚔️ Teleport: Prea PDIP") end
+
+function ggtp4() modifyMemory("657;1;1075838976;1008981770;16777473;2565:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) gg.toast("👹 Teleport: Ogre") end
+
+function ggtp5() modifyMemory("258;1;2.0F;1008981770;1.5F;67109121;1806:33", DUNGEON_CONFIG.REPLACE_VALUE_TP) gg.toast("🐦 Teleport: Aves") end
+
+-- Utility function untuk menampilkan status dungeon function getDungeonStatus() local status = "🎯 DUNGEON STATUS:\n\n"
+
+end
+
+-- Tambahkan ke menu utama untuk mengecek status function checkDungeonStatus() gg.alert(getDungeonStatus()) end
+
+function TP() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "🏠 EVEHOME", "⚡ DEV FAST DROP",  "🔄 DEV RESET SKILL", "👑 FARM BOSS EXP", "⚔️ SETTA", "🌙 NIGHT KINGDOM", "⭐ STARDUST", "🏖️ SUMMER BEACH", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Fungsi utama untuk teleport function teleportToLocation(locationId) local location = TELEPORT_LOCATIONS[locationId] if not location then gg.toast("❌ Lokasi tidak ditemukan") return false end
+
+end
+
+-- Fungsi individual untuk backward compatibility function tp1()teleportToLocation(1) end function tp2()teleportToLocation(2) end function tp3()teleportToLocation(3) end function tp4()teleportToLocation(4) end function tp5()teleportToLocation(5) end function tp6()teleportToLocation(6) end function tp7()teleportToLocation(7) end function tp8()teleportToLocation(8) end
+
+-- Fungsi untuk teleport custom function teleportCustom(value,locationName) local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(TELEPORT_CONFIG.MEMORY_RANGE)
+
+end
+
+-- Fungsi untuk menampilkan status teleport function getTeleportStatus() local status = "🎯 TELEPORT STATUS:\n\n" status = status .. "📊 Total Teleport: " .. teleportState.teleportCount .. "\n"
+
+end
+
+-- Fungsi untuk quick teleport berdasarkan ID function quickTeleport(locationId) if locationId >= 1 and locationId <= #TELEPORT_LOCATIONS then return teleportToLocation(locationId) else gg.toast("❌ ID lokasi tidak valid") return false end end
+
+-- Fungsi untuk menampilkan info lokasi function showLocationInfo(locationId) local location = TELEPORT_LOCATIONS[locationId] if location then local info = string.format([[
+📍 %s
+🆔 ID: %d
+📝 Deskripsi: %s
+💎 Value: %d
+        ]], location.name, locationId, location.description, location.value)
+
+end
+
+-- Menu untuk melihat info lokasi function showTeleportInfo() local menuItems = {} for _, loc in ipairs(TELEPORT_LOCATIONS) do table.insert(menuItems, "📖 " .. loc.name) end table.insert(menuItems, "🔙 Back")
+
+end
+
+function GAMEEM() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "🏜️ SKILL PASIR", "💡 BUFF LIGHT", "⚔️ BUFF FIGHT", "👑 SKILL WIGS",  "🎁 BONUS SKILL", "📊 SKILL STATUS", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Fungsi utama untuk aktivasi skill function activateSkill(skillId) local skill = MALE_SKILLS[skillId] if not skill then gg.toast("❌ Skill tidak ditemukan") return false end
+
+end
+
+-- Fungsi individual untuk backward compatibility function gsbbt1()activateSkill(1) end function gsbbt2()activateSkill(2) end function gsbbt3()activateSkill(3) end function gsbbt4()activateSkill(4) end function gsbbt5()activateSkill(5) end
+
+-- Fungsi untuk menampilkan status skill function showSkillStatus() local status = "⚡ SKILL STATUS:\n\n" status = status .. "📊 Total Aktivasi: " .. skillState.totalActivations .. "\n"
+
+end
+
+-- Fungsi untuk deaktivasi semua skill function deactivateAllSkills() local success = pcall(function() gg.setVisible(false) gg.clearList() -- Unfreeze semua values gg.clearResults()
+
+end
+
+-- Fungsi untuk auto root (crt) yang dioptimasi function crt() local success = pcall(function() gg.setVisible(false) gg.clearResults()
+
+end
+
+-- Fungsi utility untuk modifikasi memory function modifyMemory(pattern,newValue, valueType) local success = pcall(function() gg.searchNumber(pattern, valueType or gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1) local results = gg.getResults(100) if #results > 0 then for _, v in ipairs(results) do v.value = tostring(newValue) end gg.setValues(results) end gg.clearResults() end) return success end
+
+-- Fungsi untuk menampilkan info skill function showSkillInfo(skillId) local skill = MALE_SKILLS[skillId] if skill then local info = string.format([[
+🎯 %s
+🆔 ID: %d
+📝 Deskripsi: %s
+💎 Value: %d
+Status: %s
+        ]], skill.name, skillId, skill.description, skill.value, skillState.activeSkills[skillId] and "✅ AKTIF" or "❌ NONAKTIF")
+
+end
+
+-- Menu untuk melihat info skill function showSkillsInfo() local menuItems = {} for _, skill in ipairs(MALE_SKILLS) do table.insert(menuItems, "📖 " .. skill.name) end table.insert(menuItems, "🔙 Back")
+
+end
+
+function GAMEZ() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "🏜️ SKILL PASIR", "💡 BUFF LIGHT", "⚔️ BUFF FIGHT", "👑 SKILL WIGS",  "🎁 BONUS SKILL", "📊 SKILL STATUS", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Fungsi utama untuk aktivasi skill female function activateFemaleSkill(skillId) local skill = FEMALE_SKILLS[skillId] if not skill then gg.toast("❌ Skill female tidak ditemukan") return false end
+
+end
+
+-- Fungsi individual untuk backward compatibility function gsb1()activateFemaleSkill(1) end function gsb2()activateFemaleSkill(2) end function gsb3()activateFemaleSkill(3) end function gsb4()activateFemaleSkill(4) end function gsb5()activateFemaleSkill(5) end
+
+-- Fungsi untuk menampilkan status skill female function showFemaleSkillStatus() local status = "🌸 FEMALE SKILL STATUS:\n\n" status = status .. "📊 Total Aktivasi: " .. femaleSkillState.totalActivations .. "\n"
+
+end
+
+-- Fungsi untuk deaktivasi semua skill female function deactivateAllFemaleSkills() local success = pcall(function() gg.setVisible(false) gg.clearList() -- Unfreeze semua values gg.clearResults()
+
+end
+
+-- Fungsi untuk menampilkan info skill female function showFemaleSkillInfo(skillId) local skill = FEMALE_SKILLS[skillId] if skill then local info = string.format([[
+🎯 %s
+🆔 ID: %d
+📝 Deskripsi: %s
+💎 Value: %d
+Status: %s
+        ]], skill.name, skillId, skill.description, skill.value, femaleSkillState.activeSkills[skillId] and "✅ AKTIF" or "❌ NONAKTIF")
+
+end
+
+-- Menu untuk melihat info skill female function showFemaleSkillsInfo() local menuItems = {} for _, skill in ipairs(FEMALE_SKILLS) do table.insert(menuItems, "📖 " .. skill.name) end table.insert(menuItems, "🔙 Back")
+
+end
+
+-- Fungsi untuk membandingkan skill male dan female function compareGenderSkills() local comparison = "⚡ PERBANDINGAN SKILL GENDER:\n\n"
+
+end
+
+-- Fungsi untuk aktivasi semua skill female sekaligus function activateAllFemaleSkills() local successCount = 0 local totalSkills = #FEMALE_SKILLS
+
+end
+
+function crt() local success = pcall(function() gg.setVisible(false) gg.clearResults()
+
+end
+
+-- Fungsi utility untuk modifikasi memory function modifyMemory(pattern,refineValue, newValue, valueType) local success = pcall(function() gg.searchNumber(pattern, valueType or gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+
+end
+
+-- Fungsi untuk menonaktifkan root function deactivateRoot() local success = pcall(function() gg.setVisible(false) gg.clearList() gg.clearResults()
+
+end
+
+-- Fungsi untuk mengecek status root function getRootStatus() local status = "🌿 ROOT STATUS:\n\n" status = status .. "Status: " .. (rootState.isActive and "✅ AKTIF" or "❌ NONAKTIF") .. "\n" status = status .. "Total Aktivasi: " .. rootState.totalActivations .. "\n"
+
+end
+
+-- Fungsi untuk menampilkan status root function showRootStatus() gg.alert(getRootStatus()) end
+
+-- Fungsi untuk log aktivasi root function logRootActivation() local logMessage = string.format( "ROOT_ACTIVATION - Time: %s - Total: %d", os.date("%Y-%m-%d %H:%M:%S"), rootState.totalActivations )
+
+end
+
+-- Fungsi untuk reset root state function resetRootState() rootState.isActive = false rootState.totalActivations = 0 rootState.lastActivationTime = nil gg.toast("🔄 Root state direset") end
+
+-- Fungsi safe execution dengan retry function safeRootActivation(maxRetries) maxRetries = maxRetries or 3
+
+end
+
+function bag() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "📦 STORAGE ENCHANTMENT",  "🏪 MARKET ENCHANTMENT", "📊 ACCESS HISTORY", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Fungsi utama untuk akses enchantment function accessEnchantment(value,actionName) local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(STORAGE_CONFIG.MEMORY_RANGE)
+
+end
+
+-- Fungsi untuk akses storage function accessStorage() return accessEnchantment(12, "Storage Enchantment") end
+
+-- Fungsi untuk akses market
+function accessMarket() return accessEnchantment(27, "Market Enchantment") end
+
+-- Fungsi untuk menampilkan history akses function showAccessHistory() local history = "📊 ENCHANTMENT ACCESS HISTORY:\n\n" history = history .. "🔄 Total Akses: " .. storageState.accessCount .. "\n"
+
+end
+
+-- Fungsi untuk reset access counter function resetAccessCounter() storageState.accessCount = 0 storageState.lastAccessed = nil storageState.lastAction = nil gg.toast("🔄 Counter akses direset") end
+
+-- Fungsi untuk cek status enchantment function checkEnchantmentStatus() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(STORAGE_CONFIG.MEMORY_RANGE)
+
+end
+
+-- Fungsi individual untuk backward compatibility function BG()return accessStorage() end function BM()return accessMarket() end
+
+-- Fungsi untuk auto detect dan repair enchantment function autoFixEnchantment() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(STORAGE_CONFIG.MEMORY_RANGE)
+
+end
+
+-- Menu extended untuk fitur tambahan function advancedBagMenu() local advancedItems = { "🔙 BACK 🔙", "📦 Access Storage", "🏪 Access Market",  "🔍 Check Status", "🛠️ Auto Fix", "📊 View History", "🔄 Reset Counter" }
+
+end
+
+function qttp() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "⚡ SKIP SETTA QUEST", "🏠 SKIP EVEHOME QUEST", "💧 AMBIL WATER SHOT",  "🌿 AMBIL TONGKAT KAYU", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Fungsi utama untuk eksekusi quest action function executeQuestAction(actionId) local action = QUEST_ACTIONS[actionId] if not action then gg.toast("❌ Aksi quest tidak ditemukan") return false end
+
+end
+
+-- Fungsi individual untuk backward compatibility function qsb1()executeQuestAction(1) end function qsb2()executeQuestAction(2) end function qsb3()executeQuestAction(3) end function qsb4()executeQuestAction(4) end
+
+-- Fungsi untuk mengecek status quest pattern function checkQuestStatus() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(QUEST_CONFIG.MEMORY_RANGE)
+
+end
+
+-- Menu sederhana untuk quest bonus function simpleQuestMenu() local menuItems = { "🔙 BACK 🔙", "⚡ Skip Setta Quest", "🏠 Skip Evehome Quest",  "💧 Ambil Water Shot", "🌿 Ambil Tongkat Kayu", "🔍 Check Status" }
+
+end
+
+function COIN() while true do -- Prepare menu items local menuItems = {"🔙 REFRESH MENU 🔙"}
+
+end
+
+-- Fungsi utama untuk eksekusi coin mission function executeCoinMission(missionId) local mission = COIN_MISSIONS[missionId] if not mission then gg.toast("❌ Mission tidak ditemukan") return false end
+
+end
+
+-- Fungsi untuk menunggu klik GG function waitForGGClick() while not gg.isVisible() do gg.sleep(100) end gg.setVisible(false) gg.clearResults() gg.clearList() gg.toast("🗑️ Freeze & Result dibersihkan.") end
+
+-- Fungsi individual untuk backward compatibility for i= 1, 27 do _G["cc" .. i] = function() executeCoinMission(i) end end
+
+function gp() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+-- Fungsi untuk menampilkan loading animation function showLoadingAnimation(message,steps, delay) local loadingChars = {"█", "▓", "▒", "░", "▌", "▐"} local currentStep = 0
+
+end
+
+-- Fungsi safe version dengan validasi function safeGP() local confirm = gg.alert("⚠️ MODIFIKASI STATISTIK ⚠️",  "Fitur ini akan memodifikasi statistik karakter.\nLanjutkan?",  "YA", "BATAL")
+
+end
+
+function st() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+-- Fungsi dengan konfirmasi function safeSt() local confirm = gg.alert("⚠️ SETTA MODIFICATION ⚠️",  "This will modify Setta character properties.\nContinue?",  "YES", "CANCEL")
+
+end
+
+-- Fungsi untuk mengecek status Setta patterns function checkSettaStatus() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+function ev() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+-- Fungsi dengan konfirmasi function safeEv() local confirm = gg.alert("⚠️ EVE MODIFICATION ⚠️",  "This will modify Eve character properties.\nContinue?",  "YES", "CANCEL")
+
+end
+
+-- Fungsi untuk mengecek status Eve patterns function checkEveStatus() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+-- Fungsi untuk reset Eve modifications function resetEve() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+function ls()  gg.clearResults() gg.setVisible(false) gg.setRanges(gg.REGION_JAVA_HEAP) gg.searchNumber("119;0;16777216:13",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0) gg.processResume() gg.refineNumber("119",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
+
+revert = gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) local t= gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) for i,v in ipairs(t) do if v.flags == gg.TYPE_DWORD then v.value = "40" v.freeze = true end end gg.addListItems(t) t= nil
+
+gg.clearResults() gg.processResume() end
+
+function ale() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "⚡ STEP 1 - RESOURCE SCAN",  "🔧 STEP 2 - VALUE MODIFICATION", "🔄 STEP 3 - AUTO LOOP", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Global variable untuk menyimpan results local lootResults= nil
+
+function s1() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+function s2() if lootResults == nil or #lootResults == 0 then gg.toast("⚠️ Jalankan STEP 1 terlebih dahulu!") return false end
+
+end
+
+function s3() if lootResults == nil or #lootResults == 0 then gg.toast("⚠️ Jalankan STEP 1 terlebih dahulu!") return false end
+
+end
+
+-- Fungsi untuk stop auto loop function stopAutoLoot() gg.toast("⏹️ Menghentikan semua proses...") lootResults = nil gg.clearResults() gg.clearList() end
+
+-- Fungsi untuk mengecek status loot function checkLootStatus() if lootResults and #lootResults > 0 then gg.toast("✅ Resource data tersedia") gg.toast("Address: " .. lootResults[1].address) else gg.toast("❌ Belum ada resource data") end end
+
+function als() while true do local menuItems = { "🔙 REFRESH MENU 🔙", "⚡ STEP 1 - RESOURCE SCAN",  "🔧 STEP 2 - VALUE MODIFICATION", "🔄 STEP 3 - AUTO LOOP", "🔙 BACK TO MAIN 🔙" }
+
+end
+
+-- Global variable untuk Setta loot results local settaLootResults= nil
+
+function ss1() local success = pcall(function() gg.setVisible(false) gg.clearResults() gg.setRanges(gg.REGION_JAVA_HEAP)
+
+end
+
+function ss2() if settaLootResults == nil or #settaLootResults == 0 then gg.toast("⚠️ Jalankan STEP 1 terlebih dahulu!") return false end
+
+end
+
+function ss3() if settaLootResults == nil or #settaLootResults == 0 then gg.toast("⚠️ Jalankan STEP 1 terlebih dahulu!") return false end
+
+end
+
+-- Fungsi untuk stop auto loot Setta function stopSettaAutoLoot() gg.toast("⏹️ Menghentikan semua proses Setta...") settaLootResults = nil gg.clearResults() gg.clearList() end
+
+-- Fungsi untuk mengecek status Setta loot function checkSettaLootStatus() if settaLootResults and #settaLootResults > 0 then gg.toast("✅ Setta resource data tersedia") gg.toast("Address: " .. settaLootResults[1].address) else gg.toast("❌ Belum ada resource data Setta") end end
+
+function buffp() gg.clearResults() gg.setVisible(false) gg.setRanges(gg.REGION_JAVA_HEAP) gg.searchNumber("65536;1;211~212:13",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0) gg.processResume() gg.refineNumber("211",gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
+
+revert = gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) local t= gg.getResults(100, nil, nil, nil, nil, nil, nil, nil, nil) for i,v in ipairs(t) do if v.flags == gg.TYPE_DWORD then v.value = "375" v.freeze = true end end gg.addListItems(t) t= nil gg.processResume() showToast("Buff Settings diaktifkan") end
+
+-- ============================================= --SYSTEM FUNCTIONS --============================================= function exitScript() local confirm = gg.alert("⚠️ KONFIRMASI KELUAR ⚠️",  "Apakah Anda yakin ingin keluar?", "YA", "TIDAK")
+
+end
+
+function getBypassStatus() local status = "🔍 Status Bypass:\n" status = status .. "• Anti-Login: " .. (bypassState.antiLoginActive and "AKTIF" or "NONAKTIF") .. "\n" status = status .. "• Stabilizer: " .. (bypassState.stabilizerActive and "AKTIF" or "NONAKTIF") .. "\n" status = status .. "• GG Detection: " .. (bypassState.ggDetectionDisabled and "MATI" or "HIDUP")
+
+end
+
+-- ============================================= --MAIN EXECUTION --============================================= local function main() -- Tampilkan welcome screen terlebih dahulu if not showWelcomeScreen() then return -- Keluar jika script expired end
+
+end
+
+-- Jalankan script utama dengan error handling gg.setVisible(false) gg.toast("🎮VELLIX_AO Script Loading...")
+
+local success, err = pcall(main)
+
+if not success then gg.alert("⚠️ CRITICAL ERROR ⚠️\n" .. tostring(err)) else gg.toast("Script selesai dijalankan") end
